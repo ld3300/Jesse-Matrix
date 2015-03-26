@@ -6,85 +6,113 @@ int time = 200;
 const int index = 59;
 
 byte data;
-byte dataArray[index];
+//byte dataArray[index];
+byte dataArray = 1;  //no longer need an array
+
+int pattNumber = 0;     //variable to indicate next pattern
+int curPattern = 0;
+
+int numPatterns = 6;    // How many patterns in the case statement
 
 void setup() {
   pinMode(latchPin, OUTPUT);
   Serial.begin(9600);
-
-  //Back and forth 1 by 1 (x2)
-  dataArray[0] = 0x80;
-  dataArray[1] = 0x40;
-  dataArray[2] = 0x20;
-  dataArray[3] = 0x10;
-  dataArray[4] = 0x08;
-  dataArray[5] = 0x04;
-  dataArray[6] = 0x02;
-  dataArray[7] = 0x01;
-  dataArray[8] = 0x02;
-  dataArray[9] = 0x04;
-  dataArray[10] = 0x08;
-  dataArray[11] = 0x10;
-  dataArray[12] = 0x20;
-  dataArray[13] = 0x40;
-  dataArray[14] = 0x80;
-  dataArray[15] = 0x40;
-  dataArray[16] = 0x20;
-  dataArray[17] = 0x10;
-  dataArray[18] = 0x08;
-  dataArray[19] = 0x04;
-  dataArray[20] = 0x02;
-  dataArray[21] = 0x01;
-  dataArray[22] = 0x02;
-  dataArray[23] = 0x04;
-  dataArray[24] = 0x08;
-  dataArray[25] = 0x10;
-  dataArray[26] = 0x20;
-  dataArray[27] = 0x40;
-  dataArray[28] = 0x80;
-  //Pulse (x2)
-  dataArray[29] = 0x18;
-  dataArray[30] = 0x3C;
-  dataArray[31] = 0x7E;
-  dataArray[32] = 0xFF;
-  dataArray[33] = 0x7E;
-  dataArray[34] = 0x3C;
-  dataArray[35] = 0x18;
-  dataArray[36] = 0x3C;
-  dataArray[37] = 0x7E;
-  dataArray[38] = 0xFF;
-  dataArray[39] = 0x7E;
-  dataArray[40] = 0x3C;
-  dataArray[41] = 0x18;
-  //Trail - 3 led follow
-  dataArray[42] = 0x08;
-  dataArray[43] = 0x18;
-  dataArray[44] = 0x38;
-  dataArray[45] = 0x70;
-  dataArray[46] = 0xE0;
-  dataArray[47] = 0xC0;
-  dataArray[48] = 0x80;
-  dataArray[49] = 0x00;
-  dataArray[50] = 0x01;
-  dataArray[51] = 0x03;
-  dataArray[52] = 0x07;
-  dataArray[53] = 0x0E;
-  dataArray[54] = 0x1C;
-  dataArray[55] = 0x38;
-  dataArray[56] = 0x70;
-  dataArray[57] = 0xE0;
-  dataArray[58] = 0xC0;
 }
 
+
 void loop() {
-  for (int j = 0; j < index; j++) {
-    data = dataArray[j];
+  pattNumber = pattNumber % numPatterns;
+  patterns();
+  
+//  for (int j = 0; j < index; j++) {
+    data = dataArray;
     digitalWrite(latchPin, 0);
     
     shiftOut(dataPin, clockPin, data);
     
     digitalWrite(latchPin, 1);
     delay(time);
+//  }
+}
+
+void patterns(){
+  switch (pattNumber) {
+    case 0:
+      //Back and forth 1 by 1 (x2)  Simple Method
+      if (curPattern < 8) {
+        dataArray *= 2;
+      }
+      else if (curPattern < 16) {
+        dataArray /= 2;
+      }
+      curPattern += 1;
+      if (curPattern == 16) {
+        curPattern = 0;
+        pattNumber += 1; //add one to pattNumber
+      }
+    break;
+    case 1:
+      //Pulse (x2)
+      if (curPattern == 0 || curPattern == 6 || curPattern == 12) {
+        dataArray = 0x18; //24
+      }
+      else if(curPattern == 1 || curPattern == 5 || curPattern == 7 || curPattern == 11) {
+        dataArray = 0x3C; //60
+      }
+      else if(curPattern == 2 || curPattern == 4 || curPattern == 8 || curPattern == 10) {
+        dataArray = 0x7E; //126
+      }
+      else if(curPattern == 3 || curPattern == 6 || curPattern == 9) {
+        dataArray = 0xFF; //255
+      }
+      curPattern += 1;
+      if (curPattern == 13) {
+        curPattern = 0;
+        pattNumber += 1;
+      }
+    break;
+    case 2: 
+      dataArray += 1;
+      curPattern += 1;
+      if (curPattern == 255) {
+        curPattern = 0;
+        pattNumber += 1;
+      }
+    break;
+    case 3: 
+      dataArray -= 1;
+      curPattern += 1;
+      if (curPattern == 255) {
+        curPattern = 0;
+        pattNumber += 1;
+      }
+    break;
+    case 4:
+      randomSeed(analogRead(0));
+      dataArray = random(255);
+      curPattern += 1;
+      if (curPattern == 25) {
+        curPattern = 0;
+        pattNumber += 1;
+      }
+    break;
+    case 5:
+      if (curPattern == 0) {
+        dataArray = 0;
+      }
+      else if (curPattern <= 8) {
+        dataArray << 1;
+        dataArray += 1;
+      }
+      else if (curPattern <= 16) {
+        dataArray >> 1;
+      }
+      curPattern +=1;
+      if (curPattern == 25) {
+        curPattern = 0;
+        pattNumber += 1;
+      }
+    break;
   }
 }
 
